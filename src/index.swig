@@ -20,14 +20,14 @@
      - edit the following six tags. For more information, see the following blog post:
       (https://developerscorner.storymaps.arcgis.com/grow-your-story-maps-audience-with-open-graph-tags-b7639cb65d5c)
   -->
-  <title></title>
-  <meta name="description" content="">
+  <title>National Park Memories</title>
+  <meta name="description" content="2016 marks the centennial of the National Park Service. Help us celebrate 100 years of the world’s premier park system by sharing your favorite photos and experiences in America's national parks.">
 
   <!-- Social Sharing -->
   <meta property="og:type" content="article"/>
-  <meta property="og:title" content=""/>
-  <meta property="og:description" content=""/>
-  <meta property="og:image" content=""/>
+  <meta property="og:title" content="National Park Memories"/>
+  <meta property="og:description" content="2016 marks the centennial of the National Park Service. Help us celebrate 100 years of the world’s premier park system by sharing your favorite photos and experiences in America's national parks."/>
+  <meta property="og:image" content="https://storymaps.esri.com/stories/2016/national-park-memories/share.jpg"/>
   <!-- END Social Sharing -->
 
   <script type="text/javascript">
@@ -36,11 +36,11 @@
 		//-------------------------------------------------------------------------------------------
 		var configOptions = {
 			// Enter an application ID created through the Crowdsource builder
-			appid: "",
+			appid: "eb6ddfd65e8d4b35b199375dba681529",
 			// Optionally to be able to use the appid URL parameter, configure here the list of application author
 			//  whose application are allowed to be viewed by this Crowdsource deployment
 			// This is the Portal username of the Crowdsource owner (e.g. ["user1"] or ["user1", "user2"])
-			authorizedOwners: ["*"],
+			authorizedOwners: ["StoryMapCrowdsource"],
 		};
 		// Optionally sharing, proxy URLs, Bing Maps key, Geometry and Geocode service's URLs can be configured in app/config.js. This is only required
 		//   when the webmap is not hosted on ArcGIS Online or a Portal for ArcGIS instance and the application isn't deployed as /home/StoryMapCrowdsource/ or /apps/StoryMapCrowdsource/.
