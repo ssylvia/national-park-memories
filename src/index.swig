@@ -40,7 +40,7 @@
 			// Optionally to be able to use the appid URL parameter, configure here the list of application author
 			//  whose application are allowed to be viewed by this Crowdsource deployment
 			// This is the Portal username of the Crowdsource owner (e.g. ["user1"] or ["user1", "user2"])
-			authorizedOwners: ["StoryMapCrowdsource"],
+			authorizedOwners: ["StoryMaps"],
 		};
 		// Optionally sharing, proxy URLs, Bing Maps key, Geometry and Geocode service's URLs can be configured in app/config.js. This is only required
 		//   when the webmap is not hosted on ArcGIS Online or a Portal for ArcGIS instance and the application isn't deployed as /home/StoryMapCrowdsource/ or /apps/StoryMapCrowdsource/.
