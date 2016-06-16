@@ -27,7 +27,7 @@
   <meta property="og:type" content="article"/>
   <meta property="og:title" content="National Park Memories"/>
   <meta property="og:description" content="2016 marks the centennial of the National Park Service. Help us celebrate 100 years of the world’s premier park system by sharing your favorite photos and experiences in America's national parks."/>
-  <meta property="og:image" content="https://storymaps.esri.com/stories/2016/national-park-memories/share.jpg"/>
+  <meta property="og:image" content="https://storymaps.esri.com/stories/2016/national-park-memories/resources/images/share.jpg"/>
   <!-- END Social Sharing -->
 
   <script type="text/javascript">
