@@ -12,6 +12,7 @@
 @import "helper/loading/Loader";
 @import "helper/infiniteScroller/InfiniteScroller";
 @import "helper/notifications/AppNotifications";
+@import "helper/mapTip/MapTip";
 
 // Forms
 @import "forms/Forms";
@@ -69,4 +70,10 @@ html,body,#app,.crowdsource-app,.viewer {
     color: $nameStandard;
   }
 
+}
+
+@media (max-width: 767px) {
+  .banner .viewer {
+    height: calc(100% - #{$navbar-height-mobile});
+  }
 }

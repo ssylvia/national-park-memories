@@ -33,7 +33,6 @@ export const CrowdsourceWebmapController = class CrowdsourceWebmapController ext
     // Autobind methods
     this.isHomeExtentChanged = this.isHomeExtentChanged.bind(this);
     this.saveHomeExtent = this.saveHomeExtent.bind(this);
-    this.refreshLayers = this.refreshLayers.bind(this);
   }
 
   updateMap(options) {
@@ -68,21 +67,8 @@ export const CrowdsourceWebmapController = class CrowdsourceWebmapController ext
         }
       });
       $('.home-location-save-btn').on('click',this.saveHomeExtent);
-      this._homeButton.on('home',this.refreshLayers);
-    }
-  }
 
-  refreshLayers() {
-    this._map.layerIds.forEach((layer) => {
-      if (this._map.getLayer(layer).refresh && typeof this._map.getLayer(layer).refresh === 'function') {
-        this._map.getLayer(layer).refresh();
-      }
-    });
-    this._map.graphicsLayerIds.forEach((layer) => {
-      if (this._map.getLayer(layer).refresh && typeof this._map.getLayer(layer).refresh === 'function') {
-        this._map.getLayer(layer).refresh();
-      }
-    });
+    }
   }
 
   saveHomeExtent() {
@@ -160,7 +146,8 @@ export const CrowdsourceWebmapController = class CrowdsourceWebmapController ext
           MapActions.updateMapReferences({
             itemInfo: this._itemInfo,
             map,
-            layer
+            layer,
+            clusterLayer
           });
         }
 
@@ -195,12 +182,46 @@ export const CrowdsourceWebmapController = class CrowdsourceWebmapController ext
             return prev.concat(current.attributes[layer.objectIdField]);
           },[]);
 
-          MapActions.selectFeatures(ids);
+          MapActions.selectFeature(ids[0]);
         });
 
         map.on('click', () => {
-          MapActions.selectFeatures([]);
+          MapActions.selectFeature(false);
         });
+
+        map.on('pan-start',() => {
+          MapActions.mapMoving(true);
+        });
+
+        map.on('zoom-start',() => {
+          MapActions.mapMoving(true);
+        });
+
+        map.on('extent-change',() => {
+          MapActions.mapMoving(false);
+        });
+
+        if (!this._settings.isMobile) {
+          clusterLayer.on('mouse-over',(e) => {
+            map.setMapCursor('pointer');
+            if (e.graphic && e.graphic.attributes.clusterCount && e.graphic.attributes.clusterCount === 1) {
+              const clusterId = e.graphic.attributes.clusterId;
+              const features = clusterLayer._inExtent();
+              const feature = features.filter((current) => {
+                return current.attributes.clusterId === clusterId;
+              })[0];
+
+              if (feature) {
+                MapActions.highlightFeature(feature.attributes[layer.objectIdField]);
+              }
+            }
+          });
+
+          clusterLayer.on('mouse-out',() => {
+            map.setMapCursor('default');
+            MapActions.highlightFeature(false);
+          });
+        }
 
         // Hide original layer
         layer.hide();

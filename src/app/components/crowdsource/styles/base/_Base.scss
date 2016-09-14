@@ -1,7 +1,7 @@
 #app {
-  position: relative;
-  height: 100vh;
-  width: 100vw;
+  position: absolute;
+  height: 100%;
+  width: 100%;
   z-index: 1;
 }
 
@@ -72,12 +72,18 @@
     background: inherit;
     z-index: 2;
     overflow: hidden;
+    height: 37px;
+    width: 37px;
+    text-align: center;
 
-    .close {
-      height: 50px;
-      width: 50px;
-      font-size: 50px;
-      font-weight: normal;
+    .close-btn {
+      padding: 5px;
+      font-size: 20px;
+      line-height: 1;
+
+      svg {
+        vertical-align: middle;
+      }
     }
   }
 
@@ -93,6 +99,5 @@
   .btn.nav-btn {
     white-space: nowrap;
   }
-
 
 }

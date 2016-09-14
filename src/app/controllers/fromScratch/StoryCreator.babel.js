@@ -1,5 +1,6 @@
 import $ from 'jquery';
 import lang from 'dojo/_base/lang';
+import URI from 'lib/urijs/src/URI';
 import Helper from 'babel/utils/helper/Helper';
 import UrlUtils from 'esri/urlUtils';
 import Logger from 'babel/utils/logging/Logger';
@@ -201,22 +202,27 @@ export default class StoryCreator {
 
   createFeatureService() {
     const portal = lang.getObject('appState.app.portal',false,this);
+    const isDev = lang.getObject('appState.mode.isDev',false,this);
+    const isDevext = lang.getObject('appState.config.sharingurl',false,this) ? lang.getObject('appState.config.sharingurl',false,this).search('devext.arcgis.com') >= 0 : false;
 
     this.itemCreationPending = true;
-    portal.createService().then((res) => {
+    portal.createService({
+      protectService: isDev || isDevext ? false : true
+    }).then((res) => {
       if (res.crowdsourceLayerUrl && res.crowdsourceLayerItemId) {
         _onStatus('Feature Service Created: ' + JSON.stringify(res),true);
 
         const layerId = 'crowdsource-layer-' + new Date().getTime();
+        const layerUrl = new URI(res.crowdsourceLayerUrl).protocol('https').href();
 
         ItemActions.updateFeatureServiceItem({
           id: res.crowdsourceLayerItemId,
-          url: res.crowdsourceLayerUrl
+          url: layerUrl
         });
         ItemActions.updateWebmapCrowdsourceLayer({
           id: layerId,
           title: builderText.fromScratchMessage.layerNameInWebmap,
-          url: res.crowdsourceLayerUrl,
+          url: layerUrl,
           itemId: res.crowdsourceLayerItemId,
           visibility: true,
           opacity: 1,

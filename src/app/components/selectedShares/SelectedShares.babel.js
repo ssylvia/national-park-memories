@@ -1,137 +1,121 @@
+import $ from 'jquery';
 import React from 'react';
 import Helper from 'babel/utils/helper/Helper';
-import LazyImage from 'babel/components/helper/lazyImage/LazyImage';
-import Autolinker from 'babel/components/helper/autolinker/Autolinker';
-import viewerText from 'i18n!translations/viewer/nls/template';
-import builderText from 'mode!isBuilder?i18n!translations/builder/nls/template';
+import {getIcon} from 'babel/utils/helper/icons/IconGenerator';
+import SelectedDisplay from './SelectedDisplay';
 
 export default class SelectedShares extends React.Component {
 
   constructor(props) {
     super(props);
 
+    this.state = {
+      scrolled: false
+    };
+
     // autobind methods
-    this.getMedia = this.getMedia.bind(this);
-    this.getFieldLayout = this.getFieldLayout.bind(this);
+    this.navigateWithArrowKeys = this.navigateWithArrowKeys.bind(this);
+    this.onScroll = this.onScroll.bind(this);
+  }
+
+  componentDidMount() {
+    $(document).on('keydown',this.navigateWithArrowKeys);
+  }
+
+  componentWillUnmount() {
+    $(document).off('keydown',this.navigateWithArrowKeys);
   }
 
   render() {
 
-    const mainClasses = Helper.classnames([this.props.className,this.props.classNames,
-      'selected-shares'
-    ]);
-
-    const closeBtnClasses = Helper.classnames(['btn','btn-primary','btn-block','close-btn']);
+    const mainClasses = Helper.classnames([this.props.className,this.props.classNames,'selected-share'],{
+      scrolled: this.state.scrolled
+    });
 
     return (
       <div className={mainClasses}>
-        <div className="close-button-wrapper">
-          <button type="button" className="close" aria-label="Close" onClick={this.props.closeAction}>
-            <span aria-hidden="true" dangerouslySetInnerHTML={{__html: '&times;'}}></span>
-          </button>
-        </div>
-        <ul className="cards-list">
-          {this.props.items.map((current) => {
-
-            const attributes = current[this.props.attributePath];
-
-            return (
-              <li key={attributes[this.props.idField]}>
-                <article className="card">
-                  { this.getMedia(current) }
-                  <div className="info-section">
-                    <h4 className="share-title">{attributes[this.props.primaryField]}</h4>
-                    <p><small className="share-location">{attributes[this.props.secondaryField]}</small></p>
-                  { this.props.displayOrder.map(this.getFieldLayout.bind(this,attributes))}
-                  </div>
-                  {this.props.reviewEnabled ? (
-                    <div className="review-section bg-info">
-                      <h6 className="review-header">{builderText.review.selectedShare.header}</h6>
-                      <div className="btn-group">
-                        <button type="button" className={Helper.classnames(['btn'],{
-                            'btn-default': attributes[this.props.vettedField] !== 1,
-                            'btn-primary': attributes[this.props.vettedField] === 1
-                          })} onClick={this.props.approveAction.bind(null,attributes[this.props.idField])}>{viewerText.selectedShares.review.options.approve}</button>
-                        <button type="button" className={Helper.classnames(['btn'],{
-                            'btn-default': attributes[this.props.vettedField] !== 2,
-                            'btn-danger': attributes[this.props.vettedField] === 2
-                          })} onClick={this.props.rejectAction.bind(null,attributes[this.props.idField])}>{viewerText.selectedShares.review.options.reject}</button>
-                      </div>
-                    </div>
-                  ) : null}
-                </article>
-              </li>
-            );
-          })}
-        </ul>
-        <button type="button" className={closeBtnClasses} onClick={this.props.closeAction}>
-          { viewerText.common.buttons.close }
-        </button>
+        {this.props.featuresInExtent.length > 1 ? (
+          <div className="selected-navigation">
+            <button
+              type="button"
+              className="prev-btn btn text-btn"
+              aria-label="Previous"
+              onClick={this.props.previousAction}
+              dangerouslySetInnerHTML={{__html: getIcon('arrow-left-open')}}>
+            </button>
+            <button
+              type="button"
+              className="next-btn btn text-btn"
+              aria-label="Next"
+              onClick={this.props.nextAction}
+              dangerouslySetInnerHTML={{__html: getIcon('arrow-right-open')}}>
+            </button>
+            <button
+              type="button"
+              className="close-btn btn text-btn"
+              aria-label="Close"
+              onClick={this.props.closeAction}
+              dangerouslySetInnerHTML={{__html: getIcon('close')}}>
+            </button>
+          </div>
+        ) : (
+          <div className="selected-navigation">
+            <button
+              type="button"
+              className="close-btn btn text-btn"
+              aria-label="Close"
+              onClick={this.props.closeAction}
+              dangerouslySetInnerHTML={{__html: getIcon('close')}}>
+            </button>
+          </div>
+        )}
+        <SelectedDisplay
+          onScroll={this.onScroll}
+          reviewEnabled={this.props.reviewEnabled}
+          approveAction={this.props.approveAction}
+          rejectAction={this.props.rejectAction}
+          feature={this.props.feature}
+          displayOrder={this.props.displayOrder}
+          attributePath={this.props.attributePath}
+          fields={this.props.fields}
+          idField={this.props.idField}
+          primaryField={this.props.primaryField}
+          secondaryField={this.props.secondaryField}
+          vettedField={this.props.vettedField}
+          media={this.props.media}
+          thumbnailUrlPrepend={this.props.thumbnailUrlPrepend}
+          thumbnailUrlAppend={this.props.thumbnailUrlAppend}
+          layer={this.props.layer}>
+        </SelectedDisplay>
       </div>
     );
   }
 
-  getMedia(item) {
-    const media = this.props.media;
-    const attributes = item[this.props.attributePath];
-    const fieldProps = this.props.fields.filter((current) => {
-      return current.fieldID === media.field;
-    })[0];
-
-    switch (media.type) {
-      case 'video':
-        // add video
+  navigateWithArrowKeys(e) {
+    switch (e.which) {
+      case 27:
+        this.props.closeAction();
         break;
-      default:
-        let photoUrl;
-
-        if (fieldProps.isAttachment) {
-          const attachmentUrl = Helper.attachmentUtils.getAttachmentUrlsByStringMatch({
-            layer: this.props.layer,
-            feature: item,
-            match: media.field,
-            position: 0
-          })[0] || '';
-
-          photoUrl = Helper.attachmentUtils.checkForCredential({
-            url: attachmentUrl,
-            layer: this.props.layer
-          });
-        } else {
-          photoUrl = Helper.attachmentUtils.checkForCredential({
-            url: this.props.thumbnailUrlPrepend + attributes[media.field] + this.props.thumbnailUrlAppend,
-            layer: this.props.layer
-          });
-        }
-
-        return (
-          <div className="media-section">
-            <LazyImage className="media-photo"
-              autoSizeDiv={true}
-              src={photoUrl}>
-            </LazyImage>
-            {/*<div className="card-options">
-              <button type="button" className="open-btn">{viewerText.selectedShares.enlargePhotoButton}</button>
-            </div>*/}
-          </div>
-        );
+      case 37:
+        this.props.previousAction();
+        break;
+      case 39:
+        this.props.nextAction();
+        break;
     }
+
   }
 
-  getFieldLayout(attributes,current) {
-
-      if (typeof current === 'string') {
-        const fieldClasses = Helper.classnames(['field-display', 'field-' + current]);
-        const fieldProps = this.props.fields.filter((fCurrent) => {
-          return fCurrent.fieldID === current;
-        })[0];
-
-        if (fieldProps && fieldProps.type === 'textarea') {
-          return (<Autolinker key={current} className={fieldClasses} text={attributes[current]}></Autolinker>);
-        } else {
-          return (<p key={current} className={fieldClasses}>{attributes[current]}</p>);
-        }
-      }
+  onScroll(e) {
+    if (e.target.scrollTop > 0 && !this.state.scrolled) {
+      this.setState({
+        scrolled: true
+      });
+    } else if (e.target.scrollTop === 0 && this.state.scrolled) {
+      this.setState({
+        scrolled: false
+      });
+    }
   }
 
 }
@@ -141,9 +125,14 @@ SelectedShares.propTypes = {
   approveAction: React.PropTypes.func,
   rejectAction: React.PropTypes.func,
   closeAction: React.PropTypes.func,
-  items: React.PropTypes.array,
+  previousAction: React.PropTypes.func,
+  nextAction: React.PropTypes.func,
+  feature: React.PropTypes.shape({
+    attributes: React.PropTypes.shape({})
+  }),
   displayOrder: React.PropTypes.array,
   attributePath: React.PropTypes.string.isRequired,
+  fields: React.PropTypes.shape({}),
   idField: React.PropTypes.string.isRequired,
   primaryField: React.PropTypes.string.isRequired,
   secondaryField: React.PropTypes.string.isRequired,
@@ -167,12 +156,16 @@ SelectedShares.propTypes = {
 };
 
 SelectedShares.defaultProps = {
-  items: [],
+  feature: {
+    attributes: {}
+  },
   displayOrder: [],
   thumbnailUrlPrepend: '',
   thumbnailUrlAppend: '',
   reviewEnabled: false,
   approveAction: () => {},
   rejectAction: () => {},
-  closeAction: () => {}
+  closeAction: () => {},
+  previousAction: () => {},
+  nextAction: () => {}
 };

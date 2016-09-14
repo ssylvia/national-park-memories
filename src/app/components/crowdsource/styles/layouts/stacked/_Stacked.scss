@@ -61,6 +61,7 @@ $paneNavigationHeight: 40px;
     max-width: 500px;
     z-index: 40;
     overflow: auto;
+    -webkit-overflow-scrolling: touch;
 
     &.overlay-toggle-enter {
       opacity: 0;
@@ -80,12 +81,23 @@ $paneNavigationHeight: 40px;
   // RESPONSIVE STYLES START
   @media (max-width: 767px) {
     .main-content {
-      height: calc(100% - #{$navbar-height}  - #{$mobileBottomNavigationHeight});
+      top: $navbar-height-mobile;
+      height: calc(100% - #{$navbar-height-mobile}  - #{$mobileBottomNavigationHeight});
+    }
+
+    .contributing .main-content {
+      height: 100%;
+      top: 0;
     }
 
     .content-pane {
       .map, .thumbnail-gallery {
         height: 100%;
+      }
+
+      .map.force-on-top {
+        z-index: 50;
+        position: relative;
       }
 
       .pane-navigation {

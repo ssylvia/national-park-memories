@@ -2,6 +2,7 @@ import $ from 'jquery';
 import React from 'react';
 import { connect } from 'reactRedux';
 import lang from 'dojo/_base/lang';
+import Point from 'esri/geometry/Point';
 import Helper from 'babel/utils/helper/Helper';
 import {getIcon} from 'babel/utils/helper/icons/IconGenerator';
 import Header from 'babel/components/header/Header';
@@ -32,13 +33,16 @@ class Viewer extends React.Component {
     super();
 
     // Bind class methods
-    this.getSelectedFeatures = this.getSelectedFeatures.bind(this);
+    this.getFeatureFromId = this.getFeatureFromId.bind(this);
+    this.getMapTipProps = this.getMapTipProps.bind(this);
     this.saveContribution = this.saveContribution.bind(this);
   }
 
   render() {
 
-    const viewerClasses = Helper.classnames(['viewer']);
+    const viewerClasses = Helper.classnames(['viewer'],{
+      contributing: this.props.contributing.active
+    });
     const shareConfigWithAction = $.extend(true,{},this.props.sharing,{
       shareLinkAction: this.props.showComponent.bind(this,componentNames.SHARE_LINK)
     });
@@ -46,17 +50,19 @@ class Viewer extends React.Component {
     return (
       <div className={viewerClasses}>
         <style dangerouslySetInnerHTML={{__html: this.props.layout.fontCss}}></style>
-        <Header
-          homeAction={this.props.showComponent.bind(this,componentNames.INTRO)}
-          showParticipateActionButton={this.props.components.contribute.participationAllowed && this.props.loading.map && !this.props.contributing.active}
-          participationButtonDisabled={this.props.layout.visibleComponents.indexOf(componentNames.SIDE_PANEL_SETTINGS) >= 0}
-          participateAction={this.props.updateContributeState.bind(this,{active: true})}
-          {...this.props.components.header}
-          {...this.props.components.common}
-          sharing={shareConfigWithAction}
-          portal={this.props.portal}
-          loading={this.props.loading}>
-        </Header>
+        {!this.props.contributing.active || !this.props.mode.isMobile ? (
+          <Header
+            homeAction={this.props.showComponent.bind(this,componentNames.INTRO)}
+            showParticipateActionButton={this.props.components.contribute.participationAllowed && this.props.loading.map && !this.props.contributing.active}
+            participationButtonDisabled={this.props.layout.visibleComponents.indexOf(componentNames.SIDE_PANEL_SETTINGS) >= 0}
+            participateAction={this.props.updateContributeState.bind(this,{active: true})}
+            {...this.props.components.header}
+            {...this.props.components.common}
+            sharing={shareConfigWithAction}
+            portal={this.props.portal}
+            loading={this.props.loading}>
+          </Header>
+        ) : null}
         <IntroSplash
           editAction={this.props.showComponent.bind(this,[componentNames.SIDE_PANEL_SETTINGS,componentNames.SIDE_PANEL_SETTINGS_STRING_MATCH + componentNames.SPS_INTRO_SPLASH])}
           editingAllowed={this.props.mode.isBuilder && this.props.layout.visibleComponents.indexOf(componentNames.SIDE_PANEL_SETTINGS_STRING_MATCH + componentNames.SPS_INTRO_SPLASH) >= 0}
@@ -70,48 +76,13 @@ class Viewer extends React.Component {
           {...this.props.components.common}>
         </IntroSplash>
         { this.Layout }
-        <MobileBottomNavigation
-          buttons={this.props.components.contribute.participationAllowed && this.props.loading.map && !this.props.contributing.active ? [
-            {
-              name: viewerText.mobile.bottomNav.home,
-              icon: 'home',
-              active: this.props.layout.visibleComponents.indexOf(componentNames.CONTRIBUTE) < 0 && this.props.layout.visibleComponents.indexOf(componentNames.INTRO) >= 0,
-              action: this.props.showComponent.bind(this,componentNames.INTRO)
-            },{
-              name: viewerText.mobile.bottomNav.map,
-              icon: 'map',
-              active: this.props.layout.visibleComponents.indexOf(componentNames.CONTRIBUTE) < 0 && this.props.layout.visibleComponents.indexOf(componentNames.MAP) >= 0,
-              action: this.props.showComponent.bind(this,componentNames.MAP)
-            },{
-              name: viewerText.mobile.bottomNav.gallery,
-              icon: 'gallery',
-              active: this.props.layout.visibleComponents.indexOf(componentNames.CONTRIBUTE) < 0 && this.props.layout.visibleComponents.indexOf(componentNames.GALLERY) >= 0,
-              action: this.props.showComponent.bind(this,componentNames.GALLERY)
-            },{
-              name: this.props.components.common.participateShort,
-              icon: 'participate',
-              active: this.props.layout.visibleComponents.indexOf(componentNames.CONTRIBUTE) >= 0,
-              action: this.props.updateContributeState.bind(this,{active: true})
-            }
-          ] : [
-            {
-              name: viewerText.mobile.bottomNav.home,
-              icon: 'home',
-              active: this.props.layout.visibleComponents.indexOf(componentNames.CONTRIBUTE) < 0 && this.props.layout.visibleComponents.indexOf(componentNames.INTRO) >= 0,
-              action: this.props.showComponent.bind(this,componentNames.INTRO)
-            },{
-              name: viewerText.mobile.bottomNav.map,
-              icon: 'map',
-              active: this.props.layout.visibleComponents.indexOf(componentNames.CONTRIBUTE) < 0 && this.props.layout.visibleComponents.indexOf(componentNames.MAP) >= 0,
-              action: this.props.showComponent.bind(this,componentNames.MAP)
-            },{
-              name: viewerText.mobile.bottomNav.gallery,
-              icon: 'gallery',
-              active: this.props.layout.visibleComponents.indexOf(componentNames.CONTRIBUTE) < 0 && this.props.layout.visibleComponents.indexOf(componentNames.GALLERY) >= 0,
-              action: this.props.showComponent.bind(this,componentNames.GALLERY)
-            }
-          ]}>
-        </MobileBottomNavigation>
+        {this.mobileNavigationButtons ? (
+          <MobileBottomNavigation
+            selected={this.props.map.selectedFeatureId}
+            selectAction={this.props.selectFeature}
+            buttons={this.mobileNavigationButtons}>
+          </MobileBottomNavigation>
+        ) : null}
         <AppNotifications notifications={this.props.notifications}></AppNotifications>
         <ReactCSSTransitionGroup
           className="viewer-dialogs"
@@ -141,13 +112,16 @@ class Viewer extends React.Component {
         const sidePanel = (
           <div className="main-content">
             <div className="scroll-container">
-              <CrowdsourceWebmap className="content-pane map-pane" controllerOptions={this.webmapControllerOptions} />
+              <CrowdsourceWebmap showOnTop={this.props.map.forceToTop} mapTips={this.getMapTipProps()} className="content-pane map-pane" controllerOptions={this.webmapControllerOptions} />
               <ThumbnailGallery
+                isMobile={this.props.mode.isMobile}
                 className="content-pane gallery-pane"
                 items={this.props.map.featuresInExtent}
                 layer={this.props.map.layer}
-                selected={this.props.selectFeatureIds}
-                selectAction={this.props.selectFeatures}
+                highlighted={this.props.map.highlightedFeatureId}
+                selected={this.props.map.selectedFeatureId}
+                highlightAction={this.props.highlightAction}
+                selectAction={this.props.selectFeature}
                 {...this.props.components.gallery}
                 {...this.props.components.map.crowdsourceLayer}>
               </ThumbnailGallery>;
@@ -166,9 +140,10 @@ class Viewer extends React.Component {
                 {...this.props.components.contribute}
                 {...this.props.components.map.crowdsourceLayer}>
               </ContributePanel> : null }
-              { this.props.layout.visibleComponents.indexOf(componentNames.SELECTED_SHARES) >= 0 && this.getSelectedFeatures().length > 0 ? <SelectedShares
+              { this.props.layout.visibleComponents.indexOf(componentNames.SELECTED_SHARES) >= 0 && this.getFeatureFromId(lang.getObject('props.map.selectedFeatureId',false,this)) ? <SelectedShares
                 className="overlay-panel"
-                items={this.getSelectedFeatures()}
+                featuresInExtent={this.props.map.featuresInExtent}
+                feature={this.getFeatureFromId(lang.getObject('props.map.selectedFeatureId',false,this))}
                 layer={this.props.map.layer}
                 reviewEnabled={this.props.mode.isBuilder}
                 approveAction={(features) => {
@@ -177,7 +152,9 @@ class Viewer extends React.Component {
                 rejectAction={(features) => {
                   this.props.rejectFeatures({add: features});
                 }}
-                closeAction={this.props.selectFeatures.bind(null,false)}
+                closeAction={this.props.selectFeature.bind(null,false)}
+                nextAction={this.props.nextFeature}
+                previousAction={this.props.previousFeature}
                 {...this.props.components.shareDisplay}
                 {...this.props.components.map.crowdsourceLayer}>
               </SelectedShares> : null }
@@ -203,7 +180,7 @@ class Viewer extends React.Component {
           <div className="main-content">
             <div className="scroll-container">
               <div className="content-pane map-view">
-                <CrowdsourceWebmap controllerOptions={this.webmapControllerOptions} />
+                <CrowdsourceWebmap showOnTop={this.props.map.forceToTop} mapTips={this.getMapTipProps()} controllerOptions={this.webmapControllerOptions} />
                 <div className="pane-navigation" onClick={this.props.showComponent.bind(this,componentNames.GALLERY)}>
                   <span className="text">{CHANGE_VIEW_TO_GALLERY}</span>
                   <span className="icon" dangerouslySetInnerHTML={downArrowHtml}></span>
@@ -215,10 +192,13 @@ class Viewer extends React.Component {
                   <span className="icon" dangerouslySetInnerHTML={upArrowHtml}></span>
                 </div>
                 <ThumbnailGallery
+                  isMobile={this.props.mode.isMobile}
                   items={this.props.map.featuresInExtent}
                   layer={this.props.map.layer}
-                  selected={this.props.selectFeatureIds}
-                  selectAction={this.props.selectFeatures}
+                  selected={this.props.map.selectedFeatureId}
+                  highlighted={this.props.map.highlightedFeatureId}
+                  selectAction={this.props.selectFeature}
+                  highlightAction={this.props.highlightAction}
                   {...this.props.components.gallery}
                   {...this.props.components.map.crowdsourceLayer}>
                 </ThumbnailGallery>;
@@ -238,9 +218,10 @@ class Viewer extends React.Component {
                 {...this.props.components.contribute}
                 {...this.props.components.map.crowdsourceLayer}>
               </ContributePanel> : null }
-              { this.props.layout.visibleComponents.indexOf(componentNames.SELECTED_SHARES) >= 0 && this.getSelectedFeatures().length > 0 ? <SelectedShares
+              { this.props.layout.visibleComponents.indexOf(componentNames.SELECTED_SHARES) >= 0 && this.getFeatureFromId(lang.getObject('props.map.selectedFeatureId',false,this)) ? <SelectedShares
                 className="overlay-panel"
-                items={this.getSelectedFeatures()}
+                featuresInExtent={this.props.map.featuresInExtent}
+                feature={this.getFeatureFromId(lang.getObject('props.map.selectedFeatureId',false,this))}
                 layer={this.props.map.layer}
                 reviewEnabled={this.props.mode.isBuilder}
                 approveAction={(features) => {
@@ -249,7 +230,9 @@ class Viewer extends React.Component {
                 rejectAction={(features) => {
                   this.props.rejectFeatures({add: features});
                 }}
-                closeAction={this.props.selectFeatures.bind(null,false)}
+                closeAction={this.props.selectFeature.bind(null,false)}
+                nextAction={this.props.nextFeature}
+                previousAction={this.props.previousFeature}
                 {...this.props.components.shareDisplay}
                 {...this.props.components.map.crowdsourceLayer}>
               </SelectedShares> : null }
@@ -291,26 +274,171 @@ class Viewer extends React.Component {
       editable: this.props.mode.isBuilder,
       crowdsourceLayer: {
         where
-      }
+      },
+      isMobile: this.props.mode.isMobile,
+      selectedFeature: this.getFeatureFromId(lang.getObject('props.map.selectedFeatureId',false,this))
     },this.props.components.map);
   }
 
-  getSelectedFeatures () {
+  get mobileNavigationButtons() {
+    if (this.props.contributing.active) {
+      return false;
+    }
+    if (this.props.components.contribute.participationAllowed && this.props.loading.map && !this.props.contributing.active) {
+      return [
+        {
+          name: viewerText.mobile.bottomNav.home,
+          icon: 'home',
+          active: this.props.layout.visibleComponents.indexOf(componentNames.CONTRIBUTE) < 0 && this.props.layout.visibleComponents.indexOf(componentNames.INTRO) >= 0,
+          action: this.props.showComponent.bind(this,componentNames.INTRO)
+        },{
+          name: viewerText.mobile.bottomNav.map,
+          icon: 'map',
+          active: this.props.layout.visibleComponents.indexOf(componentNames.CONTRIBUTE) < 0 && this.props.layout.visibleComponents.indexOf(componentNames.MAP) >= 0,
+          action: this.props.showComponent.bind(this,componentNames.MAP)
+        },{
+          name: viewerText.mobile.bottomNav.gallery,
+          icon: 'gallery',
+          active: this.props.layout.visibleComponents.indexOf(componentNames.CONTRIBUTE) < 0 && this.props.layout.visibleComponents.indexOf(componentNames.GALLERY) >= 0,
+          action: this.props.showComponent.bind(this,componentNames.GALLERY)
+        },{
+          name: viewerText.mobile.bottomNav.participate,
+          icon: 'participate',
+          active: this.props.layout.visibleComponents.indexOf(componentNames.CONTRIBUTE) >= 0,
+          action: this.props.updateContributeState.bind(this,{active: true})
+        }
+      ];
+    }
+
+    return [
+      {
+        name: viewerText.mobile.bottomNav.home,
+        icon: 'home',
+        active: this.props.layout.visibleComponents.indexOf(componentNames.CONTRIBUTE) < 0 && this.props.layout.visibleComponents.indexOf(componentNames.INTRO) >= 0,
+        action: this.props.showComponent.bind(this,componentNames.INTRO)
+      },{
+        name: viewerText.mobile.bottomNav.map,
+        icon: 'map',
+        active: this.props.layout.visibleComponents.indexOf(componentNames.CONTRIBUTE) < 0 && this.props.layout.visibleComponents.indexOf(componentNames.MAP) >= 0,
+        action: this.props.showComponent.bind(this,componentNames.MAP)
+      },{
+        name: viewerText.mobile.bottomNav.gallery,
+        icon: 'gallery',
+        active: this.props.layout.visibleComponents.indexOf(componentNames.CONTRIBUTE) < 0 && this.props.layout.visibleComponents.indexOf(componentNames.GALLERY) >= 0,
+        action: this.props.showComponent.bind(this,componentNames.GALLERY)
+      }
+    ];
+  }
+
+  getFeatureFromId (featureId) {
 
     const oidField = lang.getObject('props.map.layer.objectIdField',false,this);
-    const featureIds = lang.getObject('props.map.selectedFeatureIds',false,this);
     const features = this.props.map.featuresInExtent;
 
-    if (oidField && featureIds && featureIds.length > 0) {
+    if (oidField && featureId) {
       return features.reduce((prev,current) => {
-        if (featureIds.indexOf(current.attributes[oidField]) >= 0) {
+        if (featureId === current.attributes[oidField]) {
           return prev.concat(current);
         }
         return prev;
-      },[]);
+      },[])[0];
     } else {
+      return false;
+    }
+  }
+
+  getMapTipProps() {
+    const mapMoving = lang.getObject('props.map.mapMoving',false,this);
+    const selectedFeature = this.getFeatureFromId(lang.getObject('props.map.selectedFeatureId',false,this));
+    const highlightedFeature = this.getFeatureFromId(lang.getObject('props.map.highlightedFeatureId',false,this));
+    const container = document.querySelector('.map-pane');
+    const map = lang.getObject('props.map.originalObject',false,this);
+    const features = [];
+
+    const testAndAdjustGeometry = function(mapLeft, mapRight, testGeo, direction) {
+      const mapWidth = Math.abs(map.toScreen(new Point(0,0)).x - map.toScreen(new Point(360,0)).x);
+
+      if (testGeo.x < mapLeft.x && direction !== 2) {
+        testGeo.x += mapWidth;
+        return testAndAdjustGeometry(mapLeft, mapRight, testGeo, 1);
+      } else if (testGeo.x > mapRight.x && direction !== 1) {
+        testGeo.x -= mapWidth;
+        return testAndAdjustGeometry(mapLeft, mapRight, testGeo, 2);
+      } else {
+        return testGeo;
+      }
+    };
+
+    if (mapMoving) {
       return [];
     }
+    if (selectedFeature) {
+      features.push(selectedFeature);
+    }
+    if (highlightedFeature && highlightedFeature !== selectedFeature) {
+      features.push(highlightedFeature);
+    }
+
+    if (this.props.contributing.active && map && map.getLayer('crowdsource-contribute-location') && map.getLayer('crowdsource-contribute-location').graphics && map.getLayer('crowdsource-contribute-location').graphics.length > 0) {
+      const graphic = map.getLayer('crowdsource-contribute-location').graphics[0];
+      const content = (
+        <span>
+          {viewerText.contribute.form.location.findOnMapTooltip}
+          <br></br>
+          <button type="button" className="btn btn-primary btn-block btn-sm mobile-save-button" onClick={MapActions.forceToTop.bind(null,false)}>{viewerText.contribute.form.location.saveLocation}</button>
+        </span>
+      );
+      const id = 'contribute-form-map-tip';
+      const ext = map._getAvailExtent();
+      const originalScreenPoint = map.toScreen(graphic.geometry);
+      const screenMapLeft = map.toScreen(new Point({x: ext.xmin, y: ext.ymax, spatialReference: map.spatialReference}));
+      const screenMapRight = map.toScreen(new Point({x: ext.xmax, y: ext.ymin, spatialReference: map.spatialReference}));
+      const screenPoint = testAndAdjustGeometry(screenMapLeft,screenMapRight,originalScreenPoint);
+      const symbol = graphic.symbol;
+
+      return [{
+        container,
+        content,
+        id,
+        screenPoint,
+        symbol
+      }];
+    } else if (highlightedFeature || (this.props.layout.visibleComponents.indexOf(componentNames.SELECTED_SHARES) >= 0 && selectedFeature)) {
+      return features.reduce((prev,current) => {
+
+        const oidField = lang.getObject('props.map.layer.objectIdField',false,this);
+        const primaryField = lang.getObject('props.components.map.crowdsourceLayer.primaryField',false,this);
+        const clusterId = current.attributes.clusterId;
+        const cluster = this.props.map.clusterLayer._clusters.filter((current) => {
+          return current.attributes.clusterId === clusterId;
+        })[0];
+        const content = current.attributes[primaryField];
+        const id = current.attributes[oidField];
+        const ext = map._getAvailExtent();
+        const screenMapLeft = map.toScreen(new Point({x: ext.xmin, y: ext.ymax, spatialReference: map.spatialReference}));
+        const screenMapRight = map.toScreen(new Point({x: ext.xmax, y: ext.ymin, spatialReference: map.spatialReference}));
+        const originalScreenPoint = map.toScreen(new Point({
+          x: cluster.x,
+          y: cluster.y,
+          spatialReference: {
+            wkid: 102100
+          }
+        }));
+        const screenPoint = testAndAdjustGeometry(screenMapLeft,screenMapRight,originalScreenPoint);
+        const symbol = this.props.map.clusterLayer.renderer.getSymbol(cluster);
+
+        return prev.concat({
+          container,
+          content,
+          id,
+          screenPoint,
+          symbol
+        });
+      },[]);
+
+    }
+
+    return [];
   }
 
   saveContribution(graphic) {
@@ -349,7 +477,16 @@ Viewer.propTypes = {
       React.PropTypes.bool
     ]),
     featuresInExtent: React.PropTypes.array.isRequired,
-    selectedFeatureIds: React.PropTypes.array.isRequired
+    selectedFeatureId: React.PropTypes.oneOfType([
+      React.PropTypes.bool,
+      React.PropTypes.number
+    ]).isRequired,
+    highlightedFeatureId: React.PropTypes.oneOfType([
+      React.PropTypes.bool,
+      React.PropTypes.number
+    ]).isRequired,
+    mapMoving: React.PropTypes.bool.isRequired,
+    forceToTop: React.PropTypes.bool.isRequired
   }).isRequired,
   portal: React.PropTypes.shape({}),
   mode: React.PropTypes.shape({
@@ -474,7 +611,10 @@ const mapStateToProps = (state) => {
     showComponent: AppActions.showComponent,
     hideComponent: AppActions.hideComponent,
     updateContributeState: AppActions.updateContributeState,
-    selectFeatures: MapActions.selectFeatures,
+    selectFeature: MapActions.selectFeature,
+    highlightAction: MapActions.highlightFeature,
+    nextFeature: MapActions.nextFeature,
+    previousFeature: MapActions.previousFeature,
     approveFeatures: state.mode.isBuilder ? ReviewActions.approveFeatures : null,
     rejectFeatures: state.mode.isBuilder ? ReviewActions.rejectFeatures: null,
     noticationsActions: {

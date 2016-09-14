@@ -69,6 +69,24 @@ export default class UserController {
       this.loadStarted = true;
       const portal = lang.getObject('appState.app.portal',false,this);
 
+      const clientId = lang.getObject('appState.config.oAuthAppId',false,this);
+      const locationUri = new URI(window.location).protocol('https').filename('oauth-callback.html');
+      const redirectUri =  locationUri.origin() + locationUri.path();
+      const portalUrl = new URI(portal.portalHostname).protocol('https').href().stripTrailingSlash();
+
+      if (clientId) {
+        const info = new OAuthInfo({
+          appId: clientId,
+          portalUrl: portalUrl,
+          popup: true,
+          popupCallbackUrl: redirectUri,
+          showSocialLogins: true
+        });
+
+        IdentityManager.registerOAuthInfos([info]);
+        IdentityManager.useSignInPage = false;
+      }
+
       if (lang.getObject('appState.mode.fromScratch',false,this)) {
         portal.signIn().then(this.verifyCredentials);
       } else if (lang.getObject('appState.config.appid',false,this)) {
@@ -201,18 +219,20 @@ export default class UserController {
   }
 
   signInAfterOauth(credential) {
-    const portal = lang.getObject('appState.app.portal',false,this);
+    if (lang.getObject('appState.items.app.item.id',false,this)) {
+      const portal = lang.getObject('appState.app.portal',false,this);
 
-    if (credential) {
-      var properties = $.extend({
-        server: portal.url
-      },credential);
+      if (credential) {
+        var properties = $.extend({
+          server: portal.url
+        },credential);
 
-      IdentityManager.registerToken(properties);
+        IdentityManager.registerToken(properties);
 
-      portal.signIn().then(() => {
-        this.finishOAuthLogin();
-      });
+        portal.signIn().then(() => {
+          this.finishOAuthLogin();
+        });
+      }
     }
   }
 

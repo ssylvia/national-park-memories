@@ -1,80 +1,60 @@
-.selected-shares {
+@import "./SelectedDisplay";
 
-  .close-button-wrapper {
-    display: none;
+.crowdsource-app .overlay-panel.selected-share {
+  padding: 0;
+
+  &.scrolled .selected-navigation{
+    -webkit-box-shadow: 0px 0px 15px 0px rgba(0,0,0,0.75);
+    -moz-box-shadow: 0px 0px 15px 0px rgba(0,0,0,0.75);
+    box-shadow: 0px 0px 15px 0px rgba(0,0,0,0.75);
+    transition: -webkit-box-shadow 0.3s ease-in-out;
+    transition: -moz-box-shadow 0.3s ease-in-out;
+    transition: box-shadow 0.3s ease-in-out;
   }
 
-  &:hover .close-button-wrapper{
-    display: block;
-  }
+  .selected-navigation {
+    position: relative;
+    height: 54px;
+    text-align: right;
+    padding: 10px 10px 0;
+    color: #999;
+    z-index: 1;
+    -webkit-box-shadow: 0px 0px 0px 0px rgba(0,0,0,0);
+    -moz-box-shadow: 0px 0px 0px 0px rgba(0,0,0,0);
+    box-shadow: 0px 0px 0px 0px rgba(0,0,0,0);
+    transition: -webkit-box-shadow 0.3s ease-in-out;
+    transition: -moz-box-shadow 0.3s ease-in-out;
+    transition: box-shadow 0.3s ease-in-out;
 
-  .share-title {
-    height: auto;
-    margin-bottom: 0;
-  }
-
-  .media-photo.lazy-image.loaded {
-    @include animation(fadeIn 1.5s);
-  }
-
-  // Calcite Cards Override
-  .cards-list {
-    width: 100%;
-
-    li {
-      width: 100%;
-      padding: 0 0 15px;
+    .next-btn {
+      margin: 0 10px;
     }
 
-    .card {
-      padding: 0;
-      width: 100%;
-      height: auto;
-      text-align: left;
-      margin-bottom: 15px;
+    .btn {
+      padding: 5px;
+      font-size: 20px;
+      line-height: 1;
+    }
 
-      .media-section {
-        position: relative;
-
-        .card-options {
-          background: linear-gradient(rgba(0, 0, 0, 0.6) 0, rgba(0, 0, 0, 0.6) 100%, transparent 100%, rgba(255, 255, 255, 0) 0);
-          box-shadow: none;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-
-          button {
-            margin-top: calc(-30px - 2.4rem);
-          }
-        }
-
-        img {
-          height: auto;
-          width: 100%;
-          max-width: none;
-        }
-      }
-
-      .info-section {
-        margin: 20px;
-
-        .card-info {
-          text-align: center;
-        }
-      }
-
-      .review-section {
-        padding: 15px;
-
-        .review-header {
-          height: 1em;
-          margin-top: 0;
-          font-weight: bold;
-        }
-      }
-
+    svg {
+      vertical-align: middle;
     }
   }
 
+  @media (max-width: 767px) {
+    .selected-navigation {
+      height: 44px;
+      padding: 0 10px;
+
+      .next-btn {
+        margin: 0 5px;
+      }
+
+      .btn {
+        padding: 10px;
+        font-size: 20px;
+        line-height: 1;
+      }
+    }
+  }
 }

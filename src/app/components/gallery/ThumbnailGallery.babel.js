@@ -12,6 +12,7 @@ export const ThumbnailGallery = class ThumbnailGallery extends React.Component {
 
     // Autobind methods
     this.onSelect = this.onSelect.bind(this);
+    this.onHighlight = this.onHighlight.bind(this);
     this.galleryItemRender = this.galleryItemRender.bind(this);
 
     this.state = {
@@ -41,7 +42,7 @@ export const ThumbnailGallery = class ThumbnailGallery extends React.Component {
 
     const galleryClass = Helper.classnames([this.props.className, {
       'thumbnail-gallery': true,
-      'selection': this.props.selected.length > 0
+      'selection': this.props.selected || this.props.selected === 0
     }]);
 
     return (
@@ -92,18 +93,20 @@ export const ThumbnailGallery = class ThumbnailGallery extends React.Component {
     };
 
     const itemClasses = Helper.classnames(['gallery-item', {
-      selected: this.props.selected.indexOf(attr[this.props.idField]) >= 0
+      selected: this.props.selected === attr[this.props.idField],
+      highlighted: this.props.highlighted === attr[this.props.idField]
     }]);
 
     return (
       <li className={itemClasses}
         key={attr[this.props.idField]}
         style={itemStyle}
-        onClick={this.onSelect.bind(null,attr[this.props.idField])}>
+        onClick={this.onSelect.bind(null,attr[this.props.idField])}
+        onMouseOver={this.props.isMobile ? null : this.onHighlight.bind(null,attr[this.props.idField])}
+        onMouseOut={this.onHighlight.bind(null,false)}>
         <LazyImage className="background-image" src={photoUrl}></LazyImage>
         <div className="info-card background-fill">
           <h6>{attr[this.props.primaryField]}</h6>
-          <p>{attr[this.props.secondaryField]}</p>
         </div>
       </li>
     );
@@ -116,6 +119,14 @@ export const ThumbnailGallery = class ThumbnailGallery extends React.Component {
       this.props.selectAction(selection);
     }
   }
+
+  onHighlight(selection,e) {
+    e.stopPropagation();
+    this.props.highlightAction(selection);
+    if (selection) {
+      this.props.highlightAction(selection);
+    }
+  }
 };
 
 ThumbnailGallery.propTypes = {
@@ -123,7 +134,6 @@ ThumbnailGallery.propTypes = {
   attributePath: React.PropTypes.string.isRequired,
   idField: React.PropTypes.string.isRequired,
   primaryField: React.PropTypes.string.isRequired,
-  secondaryField: React.PropTypes.string.isRequired,
   size: React.PropTypes.number.isRequired,
   thumbnailIsAttachment: React.PropTypes.bool,
   thumbnailField: React.PropTypes.string,
@@ -139,14 +149,25 @@ ThumbnailGallery.propTypes = {
     }),
     React.PropTypes.bool
   ]),
-  selected: React.PropTypes.array,
-  selectAction: React.PropTypes.func
+  selected: React.PropTypes.oneOfType([
+    React.PropTypes.number,
+    React.PropTypes.bool
+  ]),
+  highlighted: React.PropTypes.oneOfType([
+    React.PropTypes.number,
+    React.PropTypes.bool
+  ]),
+  selectAction: React.PropTypes.func,
+  highlightAction: React.PropTypes.func,
+  isMobile: React.PropTypes.bool
 };
 
 ThumbnailGallery.defaultProps = {
   items: [],
-  selected: [],
+  selected: false,
+  highlighted: false,
   selectAction: () => {},
+  highlightAction: () => {},
   size: 200,
   thumbnailIsAttachment: false,
   thumbnailUrlPrepend: '',

@@ -19,6 +19,7 @@
     padding: 0;
     margin: auto;
     overflow: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .gallery-item{
@@ -33,7 +34,7 @@
     cursor: pointer;
     @include transition(opacity 0.3s);
 
-    &:hover:not(.selected) {
+    &:hover:not(.selected), &.highlighted:not(.selected) {
       opacity: 0.75;
       @include transition(opacity 0.3s);
     }

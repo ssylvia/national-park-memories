@@ -5,7 +5,6 @@
   overflow: hidden;
   z-index: 51;
   width: 100%;
-  @include animation(slideInHeader 1s);
 
   .cell-wrapper {
     display: table;
@@ -92,6 +91,12 @@
   }
 
   // RESPONSIVE STYLES START
+  @media (min-width: 768px) {
+    .main-app-header.header {
+      @include animation(slideInHeader 1s);
+    }
+  }
+
   @media (max-width: 767px) {
     .participate-cell, .title-cell {
       display: none;
@@ -99,6 +104,18 @@
   }
   // RESPONSIVE STYLES END
 
+}
+
+@media (max-width: 767px) {
+  .main-app-header.header {
+    height: $navbar-height-mobile;
+    min-height: $navbar-height-mobile;
+
+    img.logo{
+      height: $navbar-height-mobile - 10;
+      margin: 0 $headerMargin;
+    }
+  }
 }
 
 @include keyframes(slideInHeader) {

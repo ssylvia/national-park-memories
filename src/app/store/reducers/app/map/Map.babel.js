@@ -2,7 +2,10 @@ import { combineReducers } from 'redux';
 import {
   UPDATE_MAP_REFERENCES,
   UPDATE_MAP_FEATURES_IN_EXTENT,
-  UPDATE_MAP_SELECTED_FEATURES
+  UPDATE_MAP_SELECTED_FEATURES,
+  UPDATE_MAP_HIGHLIGHTED_FEATURES,
+  UPDATE_MAP_MOVING,
+  UPDATE_MAP_ON_TOP
 } from 'babel/constants/actionsTypes/Map';
 
 const itemInfo = function(state = false, action) {
@@ -24,6 +27,20 @@ const layer = function(state = false, action) {
     case UPDATE_MAP_REFERENCES:
       if (action.references.layer) {
         return action.references.layer;
+      } else {
+        return state;
+      }
+      break;
+    default:
+      return state;
+  }
+};
+
+const clusterLayer = function(state = false, action) {
+  switch (action.type) {
+    case UPDATE_MAP_REFERENCES:
+      if (action.references.clusterLayer) {
+        return action.references.clusterLayer;
       } else {
         return state;
       }
@@ -56,13 +73,39 @@ const featuresInExtent = function(state = [], action) {
   }
 };
 
-const selectedFeatureIds = function(state = [], action) {
+const selectedFeatureId = function(state = false, action) {
   switch (action.type) {
     case UPDATE_MAP_SELECTED_FEATURES:
-      if (action.features === false) {
-        return [];
-      }
-      return [].concat(action.features);
+      return action.id;
+    default:
+      return state;
+  }
+};
+
+const highlightedFeatureId = function(state = false, action) {
+  switch (action.type) {
+    case UPDATE_MAP_HIGHLIGHTED_FEATURES:
+      return action.id;
+    case UPDATE_MAP_SELECTED_FEATURES:
+      return false;
+    default:
+      return state;
+  }
+};
+
+const mapMoving = function(state = false, action) {
+  switch (action.type) {
+    case UPDATE_MAP_MOVING:
+      return action.moving ? true : false;
+    default:
+      return state;
+  }
+};
+
+const forceToTop = function(state = false, action) {
+  switch (action.type) {
+    case UPDATE_MAP_ON_TOP:
+      return action.showOnTop ? true : false;
     default:
       return state;
   }
@@ -70,10 +113,14 @@ const selectedFeatureIds = function(state = [], action) {
 
 export const map = combineReducers({
   itemInfo,
+  clusterLayer,
   layer,
   originalObject,
   featuresInExtent,
-  selectedFeatureIds
+  selectedFeatureId,
+  highlightedFeatureId,
+  mapMoving,
+  forceToTop
 });
 
 export default map;

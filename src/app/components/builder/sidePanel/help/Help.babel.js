@@ -1,5 +1,6 @@
 import $ from 'jquery';
 import React from 'react';
+import {getIcon} from 'babel/utils/helper/icons/IconGenerator';
 import Helper from 'babel/utils/helper/Helper';
 import builderText from 'i18n!translations/builder/nls/template';
 import viewerText from 'i18n!translations/viewer/nls/template';
@@ -53,6 +54,9 @@ export default class SidePanelHelp extends React.Component {
         case 'agoCredits':
           link = 'https://www.esri.com/software/arcgis/arcgisonline/credits';
           break;
+        case 'formEditBlog':
+          link = 'https://developerscorner.storymaps.arcgis.com/how-to-personalize-your-crowdsource-story-even-more-a9ccfef11af3';
+          break;
       }
 
       templates.push({
@@ -71,8 +75,8 @@ export default class SidePanelHelp extends React.Component {
     return (
       <div className={settingsClasses}>
         <div className="close-button-wrapper">
-          <button type="button" className="close" aria-label="Close" onClick={this.props.closeAction}>
-            <span aria-hidden="true" dangerouslySetInnerHTML={{__html: '&times;'}}></span>
+          <button type="button" className="close-btn btn text-btn" aria-label="Close" onClick={this.props.closeAction}>
+            <span aria-hidden="true" dangerouslySetInnerHTML={{__html: getIcon('close')}}></span>
           </button>
         </div>
         <div className="row">
@@ -125,5 +129,5 @@ export default class SidePanelHelp extends React.Component {
 };
  SidePanelHelp.defaultProps = {
    webmapLink: '',
-  closeAction: () => {}
+   closeAction: () => {}
 };

@@ -1,5 +1,6 @@
 import $ from 'jquery';
 import React from 'react';
+import {getIcon} from 'babel/utils/helper/icons/IconGenerator';
 import Helper from 'babel/utils/helper/Helper';
 import Input from 'babel/components/forms/input/Input';
 import Textarea from 'babel/components/forms/textarea/Textarea';
@@ -58,8 +59,8 @@ export default class CrowdsourceForm extends React.Component {
     return (
       <div className="row">
         <div className="close-button-wrapper">
-          <button type="button" className="close" aria-label="Close" onClick={this.onClose}>
-            <span aria-hidden="true" dangerouslySetInnerHTML={{__html: '&times;'}}></span>
+          <button type="button" className="close-btn btn text-btn" aria-label="Close" onClick={this.onClose}>
+            <span aria-hidden="true" dangerouslySetInnerHTML={{__html: getIcon('close')}}></span>
           </button>
         </div>
         <div className="col-xs-12">
@@ -67,7 +68,7 @@ export default class CrowdsourceForm extends React.Component {
           <form onSubmit={(e) => {
               e.preventDefault();
             }}>
-          {this.props.fields.map(this.getFormField)}
+          {Object.keys(this.props.fields).map(this.getFormField)}
             <TermsAndConditions {...termsOptions}></TermsAndConditions>
           </form>
           <button type="button" className={saveBtnClasses} onClick={this.onSave}>
@@ -113,8 +114,9 @@ export default class CrowdsourceForm extends React.Component {
     return value;
   }
 
-  getFormField(field,index) {
+  getFormField(fieldName,index) {
 
+    const field = this.props.fields[fieldName];
     const self = this;
 
     if (this.formItemStatus[field.fieldID] === undefined) {
@@ -136,16 +138,24 @@ export default class CrowdsourceForm extends React.Component {
           if (field.extras && field.extras.dataType) {
             switch (field.extras.dataType) {
               case 'photo':
-                if (typeof res.value === 'object') {
-                  Object.keys(res.value).forEach((currentVal) => {
+                if (typeof res.value === 'object' && typeof res.value.photos === 'object') {
+                  Object.keys(res.value.photos).forEach((currentVal) => {
                     const value = {
                       attachment: true,
                       type: 'photo',
-                      ext: res.value[currentVal].ext,
-                      source: res.value[currentVal].source
+                      ext: res.value.photos[currentVal].ext,
+                      source: res.value.photos[currentVal].source
                     };
 
                     self.graphic.attributes[currentVal] = value;
+                  });
+                }
+                if (typeof res.value === 'object' && typeof res.value.location === 'object') {
+                  self.setState({
+                    locationFromOtherSource: {
+                      type: 'latLong',
+                      latLong: res.value.location
+                    }
                   });
                 }
                 break;
@@ -182,7 +192,7 @@ export default class CrowdsourceForm extends React.Component {
         case 'textarea':
           return <Textarea {...settings}></Textarea>;
         case 'location':
-          return <Location map={this.props.map} {...settings}></Location>;
+          return <Location map={this.props.map} locationFromOtherSource={this.state.locationFromOtherSource} {...settings}></Location>;
         default:
           return <Input {...settings}></Input>;
         }
@@ -225,7 +235,7 @@ CrowdsourceForm.propTypes = {
   vettedField: React.PropTypes.string,
   hiddenField: React.PropTypes.string,
   title: React.PropTypes.string,
-  fields: React.PropTypes.array,
+  fields: React.PropTypes.shape({}),
   fieldDefinitions: React.PropTypes.array,
   map: React.PropTypes.shape({}),
   saving: React.PropTypes.bool,
